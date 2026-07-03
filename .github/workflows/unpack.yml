@@ -1,0 +1,39 @@
+name: Generate Device Tree via twrpdtgen
+
+on:
+  workflow_dispatch: # Allows you to manually click "Run workflow"
+
+jobs:
+  unpack:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.10'
+
+    - name: Install System Dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install cpio -y
+        pip install twrpdtgen
+
+    - name: Download Recovery Image from Release
+      run: |
+        # This downloads the recovery.img asset attached to your 'v1' release
+        curl -L -o recovery.img "https://github.com/${{ github.repository }}/releases/download/v1/recovery.img"
+
+    - name: Run twrpdtgen
+      run: |
+        # Execute the generator on the downloaded image
+        python3 -m twrpdtgen recovery.img
+
+    - name: Upload Device Tree Workspace
+      uses: actions/upload-artifact@v4
+      with:
+        name: lenovo-device-tree
+        path: output/
