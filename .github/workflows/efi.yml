@@ -1,0 +1,36 @@
+name: Build UEFI EFI Application
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup MSVC x64 Environment
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: x64
+
+      - name: Assemble space.s
+        shell: cmd
+        run: ml64.exe space.s /c /Fospace.obj
+
+      - name: Link EFI Executable
+        shell: cmd
+        run: link.exe /nologo /SUBSYSTEM:EFI_APPLICATION /ENTRY:efi_main /OUT:BOOTX64.EFI space.obj
+
+      - name: Upload EFI Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: BOOTX64.EFI
+          path: BOOTX64.EFI
+          
