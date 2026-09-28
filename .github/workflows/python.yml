@@ -1,0 +1,181 @@
+name: Render Chemistry Equations
+
+on:
+  workflow_dispatch:
+
+jobs:
+  render:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            ffmpeg \
+            libcairo2-dev \
+            libpango1.0-dev \
+            texlive \
+            texlive-latex-extra \
+            texlive-fonts-extra \
+            dvisvgm
+
+      - name: Install Manim
+        run: |
+          pip install manim
+
+      - name: Create Manim scene
+        run: |
+          cat > chemistry.py <<'PY'
+          from manim import *
+
+          class ChemistryEquations(Scene):
+              def construct(self):
+
+                  equations = [
+                      MathTex(
+                          r"[A]_t = [A]_0 - kt",
+                          font_size=52
+                      ),
+
+                      MathTex(
+                          r"t_{1/2} = \frac{\ln 2}{k}",
+                          font_size=52
+                      ),
+
+                      MathTex(
+                          r"3^\circ > 2^\circ \gg 1^\circ",
+                          font_size=52
+                      ),
+
+                      MathTex(
+                          r"1^\circ > 2^\circ \gg 3^\circ",
+                          font_size=52
+                      ),
+
+                      MathTex(
+                          r"\Delta_o > P \quad \Rightarrow \quad \text{Low-spin}",
+                          font_size=48
+                      ),
+
+                      MathTex(
+                          r"\Delta_o < P \quad \Rightarrow \quad \text{High-spin}",
+                          font_size=48
+                      ),
+
+                      MathTex(
+                          r"n = 1,2,3,\ldots",
+                          font_size=52
+                      ),
+
+                      MathTex(
+                          r"l = 0,1,2,\ldots,n-1",
+                          font_size=52
+                      ),
+
+                      MathTex(
+                          r"m_l = -l,-(l-1),\ldots,0,\ldots,(l-1),+l",
+                          font_size=44
+                      ),
+
+                      MathTex(
+                          r"m_s = +\frac{1}{2},-\frac{1}{2}",
+                          font_size=52
+                      ),
+
+                      MathTex(
+                          r"v_0 = \frac{V_{\max}[S]}{K_m + [S]}",
+                          font_size=52
+                      ),
+
+                      MathTex(
+                          r"[S] = K_m",
+                          font_size=52
+                      ),
+
+                      MathTex(
+                          r"v_0 = \frac{V_{\max}}{2}",
+                          font_size=52
+                      ),
+
+                      MathTex(
+                          r"K_{m,\mathrm{app}} > K_m",
+                          font_size=48
+                      ),
+
+                      MathTex(
+                          r"V_{\max,\mathrm{app}} = V_{\max}",
+                          font_size=48
+                      ),
+
+                      MathTex(
+                          r"K_m = \mathrm{constant}",
+                          font_size=48
+                      ),
+
+                      MathTex(
+                          r"V_{\max,\mathrm{app}} < V_{\max}",
+                          font_size=48
+                      ),
+                  ]
+
+                  titles = [
+                      "Zero-order reaction",
+                      "First-order half-life",
+                      r"S_N1: Carbocation stability",
+                      r"S_N2: Reactivity",
+                      "Low-spin complex",
+                      "High-spin complex",
+                      "Principal quantum number",
+                      "Azimuthal quantum number",
+                      "Magnetic quantum number",
+                      "Spin quantum number",
+                      "Michaelis-Menten equation",
+                      "Half-maximum condition",
+                      "Velocity at [S] = K_m",
+                      "Competitive inhibition",
+                      "Competitive inhibition",
+                      "Non-competitive inhibition",
+                      "Non-competitive inhibition",
+                  ]
+
+                  for i, equation in enumerate(equations):
+                      if i < len(titles):
+                          title = Text(
+                              titles[i],
+                              font_size=32
+                          )
+                          title.to_edge(UP)
+
+                          self.play(FadeIn(title))
+                          self.play(Write(equation))
+                          self.wait(1)
+                          self.play(
+                              FadeOut(equation),
+                              FadeOut(title)
+                          )
+                      else:
+                          self.play(Write(equation))
+                          self.wait(1)
+                          self.play(FadeOut(equation))
+
+                  self.wait(1)
+          PY
+
+      - name: Render equations
+        run: |
+          manim -pqh chemistry.py ChemistryEquations
+
+      - name: Upload rendered video
+        uses: actions/upload-artifact@v4
+        with:
+          name: chemistry-equations
+          path: media/videos/chemistry/**/ChemistryEquations.mp4
